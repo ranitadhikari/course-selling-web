@@ -1,10 +1,11 @@
 const {Router} = require("express");
 const userRouter = Router();
 const jwt = require("jsonwebtoken");
-const { userModel } = require("../db");
+const { userModel, purchaseModel } = require("../db");
 const {JWT_SECRET_USERS} = require("../config")
 const bcrypt = require("bcrypt"); // pass -> hash 
 const {z} = require('zod');    // for required body format 
+const { userMiddleware } = require("../middleware/user");
 
 userRouter.post('/signup',async function(req,res){
     const requiredBody = z.object({
@@ -56,7 +57,7 @@ userRouter.post('/signin',async function(req,res){
         })
     }
 
-    const matchPass = bcrypt.compare(password,user.password); // pass -> entered by user  user.pass -> hashed pass in database
+    const matchPass =await bcrypt.compare(password,user.password); // pass -> entered by user  user.pass -> hashed pass in database
 
     if(matchPass){
         const token = jwt.sign({
@@ -66,16 +67,21 @@ userRouter.post('/signin',async function(req,res){
             token:token
         })
     }else{
-        res.status(400).json({
+        return res.status(400).json({
             msg:"wrong pass"
         })
     }
 
 })
-userRouter.get('/purchases',function(req,res){
+userRouter.get('/purchases',userMiddleware,async function(req,res){
+    const userId=req.userId;
+
+    const purchases = await purchaseModel.find({
+        userId
+    }) 
     res.json({
-        msg:"hello"
-    })
+        purchases
+    });
 })
 
 module.exports = {
