@@ -31,7 +31,7 @@ adminRouter.post("/signup",async function(req,res){
 
     const hashPassword = await bcrypt.hash(password,5);           //       password -> hash code for safety
 
-    adminModel.create({
+    await adminModel.create({
         email,
         password:hashPassword,
         firstName,
@@ -48,12 +48,12 @@ adminRouter.post("/signin",async function(req,res){
         email:email
     })
     if(!admin){
-        res.status(400).json({
+        return res.status(400).json({
             msg:"no username found"
         })
     }
 
-    const matchPass = bcrypt.compare(password,admin.password); // pass -> entered by admin  admin.pass -> hashed pass in database
+    const matchPass = await bcrypt.compare(password,admin.password); // pass -> entered by admin  admin.pass -> hashed pass in database
 
     if(matchPass){
         const token = jwt.sign({
@@ -68,14 +68,14 @@ adminRouter.post("/signin",async function(req,res){
         })
     }
 })
-adminRouter.post("/course",adminMiddleware, function(req,res){
+adminRouter.post("/course",adminMiddleware,async function(req,res){
     const adminId = req.userId;
     const {title,
         description,
         price,
         imgURL} = req.body;
 
-    const course = courseModel.create({
+    const course =await courseModel.create({
         title,
         description,
         price,
@@ -85,6 +85,47 @@ adminRouter.post("/course",adminMiddleware, function(req,res){
     res.json({
         msg:"course created",
         courseId:course._id
+    })
+})
+
+adminRouter.put("/course",adminMiddleware,async function(req,res){
+    const adminId = req.userId;
+    const {title,
+        description,
+        price,
+        imgURL,
+        courseId} = req.body;
+
+    const course =await courseModel.updateOne({
+        _id:courseId,
+        creatorId:adminId
+    },{
+        title,
+        description,
+        price,
+        imgURL
+    })
+    if(_id === courseId && creatorId === adminId){
+            res.json({
+                msg:"course Updated",
+                courseId:course._id
+            })
+    }else{
+        res.json({
+            msg:"Wrong Creator accessing wrong course"
+        })
+    }
+})
+
+adminRouter.get('/course/bulk',adminMiddleware,async function(req,res){
+    const adminId =req.userId;
+    const courses = await courseModel.find({
+        _id:courseId,
+        creatorId:adminId
+    })
+    res.json({
+        msg:"course Updated",
+        courses
     })
 })
 
