@@ -105,26 +105,24 @@ adminRouter.put("/course",adminMiddleware,async function(req,res){
         price,
         imgURL
     })
-    if(_id === courseId && creatorId === adminId){
-            res.json({
-                msg:"course Updated",
-                courseId:course._id
-            })
-    }else{
-        res.json({
-            msg:"Wrong Creator accessing wrong course"
-        })
+    if (course.matchedCount === 0) {
+        return res.status(403).json({
+            msg: "Course not found or you are not the creator"
+        });
     }
+    res.json({
+        msg: "Course updated",
+        courseId: courseId
+    });
 })
 
 adminRouter.get('/course/bulk',adminMiddleware,async function(req,res){
     const adminId =req.userId;
     const courses = await courseModel.find({
-        _id:courseId,
         creatorId:adminId
     })
     res.json({
-        msg:"course Updated",
+        msg:"course are below",
         courses
     })
 })
